@@ -4,6 +4,7 @@ import json
 from argparse import ArgumentParser
 from protocol import validate_request, make_response
 from actions import resolve
+import logging
 
 parser = ArgumentParser()
 
@@ -27,17 +28,26 @@ if args.config:
         config.update(file_config)
 
 
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('main.log'),
+        logging.StreamHandler()
+    ]
+)
+
 host, port = config.get('host'), config.get('port')
 try:
     sock = socket.socket()
     sock.bind((host, port))
     sock.listen(5)
 
-    print(f'server run on {host}:{port}')
+    logging.info(f'server run on {host}:{port}')
 
     while True:
         client, address = sock.accept()
-        print(f'Client was detected {address[0]}:{address[1]}')
+        logging.info(f'Client was detected {address[0]}:{address[1]}')
 
         b_request = client.recv(config.get('buffer_size'))
         request = json.loads(b_request.decode())
@@ -47,16 +57,16 @@ try:
             controller = resolve(action_name)
             if controller:
                 try:
-                    print(f'Client send valid request: {request}')
+                    logging.info(f'Client send valid request: {request}')
                     response = controller(request)
                 except Exception as err:
-                    print(f'Internal server error: {err}')
+                    logging.error(f'Internal server error: {err}')
                     response = make_response(request, 500, data='Internal server error')
             else:
-                print(f'Controller with action name {action_name} does not exists')
+                logging.info(f'Controller with action name {action_name} does not exists')
                 response = make_response(request, 404, 'Action not found')
         else:
-            print(f'Client send invalid request: {request}')
+            logging.info(f'Client send invalid request: {request}')
             response = make_response(request, 404, 'Wrong request')
 
         str_response = json.dumps(response)

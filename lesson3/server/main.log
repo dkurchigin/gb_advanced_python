@@ -1,0 +1,14 @@
+2019-08-01 20:08:24,956 - INFO - server run on localhost:8000
+2019-08-01 20:08:29,256 - INFO - Client was detected 127.0.0.1:49795
+2019-08-01 20:08:34,396 - INFO - Client send valid request: {'action': 'echo', 'time': 1564679314.386315, 'data': 'test'}
+2019-08-01 20:08:36,938 - INFO - Client was detected 127.0.0.1:49796
+2019-08-01 20:08:40,198 - INFO - Controller with action name test does not exists
+2019-08-01 20:32:51,250 - INFO - server run on localhost:8000
+2019-08-01 21:00:40,345 - INFO - server run on localhost:8000
+2019-08-01 21:00:43,475 - INFO - Client was detected 127.0.0.1:50550
+2019-08-01 21:00:50,175 - INFO - Client send valid request: {'action': 'echo', 'time': 1564682450.155207, 'data': 'test'}
+2019-08-01 21:00:50,175 - DEBUG - get_echo: {'action': 'echo', 'time': 1564682450.155207, 'data': 'test'}
+2019-08-01 21:32:23,351 - INFO - server run on localhost:8000
+2019-08-01 21:32:28,601 - INFO - Client was detected 127.0.0.1:51090
+2019-08-01 21:32:34,521 - INFO - Client send valid request: {'action': 'echo', 'time': 1564684354.511632, 'data': 'echo'}
+2019-08-01 21:32:34,521 - DEBUG - get_echo: {'action': 'echo', 'time': 1564684354.511632, 'data': 'echo'}
