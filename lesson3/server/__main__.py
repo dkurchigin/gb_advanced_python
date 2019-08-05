@@ -1,10 +1,11 @@
 import yaml
 import socket
-import json
 from argparse import ArgumentParser
 from protocol import validate_request, make_response
 from actions import resolve
+from handlers import handle_default_request
 import logging
+import select
 
 parser = ArgumentParser()
 
@@ -37,41 +38,39 @@ logging.basicConfig(
     ]
 )
 
+requests = []
+connections = []
 host, port = config.get('host'), config.get('port')
+
 try:
     sock = socket.socket()
     sock.bind((host, port))
+    sock.setblocking(False)
+    sock.settimeout(0)
     sock.listen(5)
 
     logging.info(f'server run on {host}:{port}')
 
     while True:
-        client, address = sock.accept()
-        logging.info(f'Client was detected {address[0]}:{address[1]}')
+        try:
+            client, address = sock.accept()
+            logging.info(f'Client was detected {address[0]}:{address[1]}')
+            connections.append(client)
+        except:
+            pass
 
-        b_request = client.recv(config.get('buffer_size'))
-        request = json.loads(b_request.decode())
+        if connections:
+            rlist, wlist, xlist = select.select(connections, connections, connections, 0)
 
-        if validate_request(request):
-            action_name = request.get('action')
-            controller = resolve(action_name)
-            if controller:
-                try:
-                    logging.info(f'Client send valid request: {request}')
-                    response = controller(request)
-                except Exception as err:
-                    logging.error(f'Internal server error: {err}')
-                    response = make_response(request, 500, data='Internal server error')
-            else:
-                logging.info(f'Controller with action name {action_name} does not exists')
-                response = make_response(request, 404, 'Action not found')
-        else:
-            logging.info(f'Client send invalid request: {request}')
-            response = make_response(request, 404, 'Wrong request')
+            for read_client in rlist:
+                bytes_request = read_client.recv(config.get('buffer_size'))
+                requests.append(bytes_request)
 
-        str_response = json.dumps(response)
-        client.send(str_response.encode())
+            if requests:
+                bytes_request = requests.pop()
+                bytes_response = handle_default_request(bytes_request)
 
-        client.close()
+                for write_client in wlist:
+                    write_client.send(bytes_response)
 except KeyboardInterrupt:
     print('\nserver shutdown')

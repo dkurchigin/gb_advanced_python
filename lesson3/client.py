@@ -3,12 +3,30 @@ import socket
 import json
 from datetime import datetime
 from argparse import ArgumentParser
+import zlib
+
+WRITE_MODE = 'write'
+READ_MODE = 'read'
+
+
+def make_request(action, data):
+    return {
+        'action': action,
+        'time': datetime.now().timestamp(),
+        'data': data
+    }
+
 
 parser = ArgumentParser()
 
 parser.add_argument(
     '-c', '--config', type=str, required=False,
     help='Sets config file path'
+)
+
+parser.add_argument(
+    '-m', '--mode', type=str, default=WRITE_MODE,
+    help='Sets client mode'
 )
 
 args = parser.parse_args()
@@ -30,20 +48,21 @@ try:
     sock.connect((host, port))
     print('Client was started')
 
-    action = input('Enter action: ')
-    data = input('Enter data: ')
+    while True:
+        if args.mode == WRITE_MODE:
+            action = input('Enter action: ')
+            data = input('Enter data: ')
 
-    request_ = {
-        'action': action,
-        'time': datetime.now().timestamp(),
-        'data': data
-    }
+            request = make_request(action, data)
+            str_request = json.dumps(request)
+            bytes_request = zlib.compress(str_request.encode())
 
-    str_request = json.dumps(request_)
-    sock.send(str_request.encode())
-    print('Client send auth request')
+            sock.send(bytes_request)
+            print(f'Client send data {data}')
+        elif args.mode == READ_MODE:
+            responce = sock.recv(config.get('buffer_size'))
+            bytes_response = zlib.decompress(responce)
+            print(f'Server response: {bytes_response}')
 
-    b_responce = sock.recv(config.get('buffer_size'))
-    print(f'Server response: {b_responce.decode()}')
 except KeyboardInterrupt:
     print('\nclient shutdown')
