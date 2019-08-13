@@ -3,10 +3,18 @@ import socket
 import json
 from datetime import datetime
 from argparse import ArgumentParser
+import threading
 import zlib
 
 WRITE_MODE = 'write'
 READ_MODE = 'read'
+
+
+def read(sock, buffer_size):
+    while True:
+        responce = sock.recv(buffer_size)
+        bytes_response = zlib.decompress(responce)
+        print(bytes_response.decode())
 
 
 def make_request(action, data):
@@ -22,11 +30,6 @@ parser = ArgumentParser()
 parser.add_argument(
     '-c', '--config', type=str, required=False,
     help='Sets config file path'
-)
-
-parser.add_argument(
-    '-m', '--mode', type=str, default=WRITE_MODE,
-    help='Sets client mode'
 )
 
 args = parser.parse_args()
@@ -48,21 +51,21 @@ try:
     sock.connect((host, port))
     print('Client was started')
 
+    read_thread = threading.Thread(
+        target=read, args=(sock, config.get('buffer_size'))
+    )
+    read_thread.start()
+
     while True:
-        if args.mode == WRITE_MODE:
-            action = input('Enter action: ')
-            data = input('Enter data: ')
+        action = input('Enter action: ')
+        data = input('Enter data: ')
 
-            request = make_request(action, data)
-            str_request = json.dumps(request)
-            bytes_request = zlib.compress(str_request.encode())
+        request = make_request(action, data)
+        str_request = json.dumps(request)
+        bytes_request = zlib.compress(str_request.encode())
 
-            sock.send(bytes_request)
-            print(f'Client send data {data}')
-        elif args.mode == READ_MODE:
-            responce = sock.recv(config.get('buffer_size'))
-            bytes_response = zlib.decompress(responce)
-            print(f'Server response: {bytes_response}')
+        sock.send(bytes_request)
+        print(f'Client send data {data}')
 
 except KeyboardInterrupt:
     print('\nclient shutdown')
